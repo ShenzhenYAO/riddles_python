@@ -7,12 +7,11 @@ unit_time = {
     "j":5,
     "p":10
 }
-
-left = ["y", "a", "j", "p"]
+left = unit_time.keys()
+print(left)
 right =[]
 time=0
 max_n_eles=2
-
 
 def get_combinations(thearr, max_n_eles):
         import itertools
@@ -47,7 +46,6 @@ def move_once(elements_ls, fromplace_arr, toplace_arr ):
                 toplace_arr = toplace_arr + [ele]
         # print('after moving, to:', toplace_arr)                
     return [fromplace_arr, toplace_arr, time_thismove]
-
 
 def move(direction, fromplace_arr, toplace_arr, max_n_eles, time, left_aftermove, trys, cumusteps):
 
@@ -97,7 +95,7 @@ def move(direction, fromplace_arr, toplace_arr, max_n_eles, time, left_aftermove
                 if (len(fromplace_arr)>0):                    
                     trys = move(direction, fromplace_arr, toplace_arr, max_n_eles, time, left_aftermove, trys, cumusteps)   
             else:
-                print("done")
+                # print("done")
                 trys=trys + [cumusteps]
 
             # use back the settings in the last step
@@ -111,17 +109,41 @@ def move(direction, fromplace_arr, toplace_arr, max_n_eles, time, left_aftermove
 direction='forth'
 fromplace_arr = left
 toplace_arr = right
-max_n_eles =2
-time=0
 left_aftermove=[]
 trys =[]
 cumusteps=[]
 trys=move(direction, fromplace_arr, toplace_arr, max_n_eles, time, left_aftermove, trys, cumusteps) 
+print ('Number of trys:', len(trys))
 
-print (len(trys))
+# find the shortest time
+min_cumutime=9999
+cumutime_trys = []
 for tryx in trys:
-    print(tryx)
-# select those with time <=17
-# besttrys
+    # for each tryx, find the cumulative time (the time recorded in the last element)
+    lastpath = tryx[len(tryx)-1]
+    # print(lastpath)
+    cumutime = lastpath['time']
+    cumutime_trys = cumutime_trys + [cumutime]
+    min_cumutime = min(min_cumutime,cumutime )
+print('the minumum time to spend is', min_cumutime, 'minutes')
 
- 
+# select records that are of the shortest time
+i=0
+besttrys=[]
+for cumutime_eachtry in cumutime_trys:
+    if (cumutime_eachtry == min_cumutime):
+        besttrys = besttrys + [trys[i]]
+    i=i+1
+# print (besttrys)
+# print(len(besttrys))
+
+# now, list the best trys step by step
+i=0
+for eachtry in besttrys:
+    i=i+1
+    print("========best try", i)
+    j=0
+    for eachstep in eachtry:
+        j=j+1
+        print (j, "from", eachstep['from'], 'move', eachstep['direction'], eachstep['move'], 'to', eachstep['to'], "time used", eachstep['time'], "minutes.")
+
