@@ -5,10 +5,12 @@ unit_time = {
     "y": 1,
     "a":2,
     "j":5,
-    "p":10
+    "p":10,
+    "q":15
 }
+
 left = unit_time.keys()
-print(left)
+# print(left)
 right =[]
 time=0
 max_n_eles=2
@@ -48,68 +50,89 @@ def move_once(elements_ls, fromplace_arr, toplace_arr ):
     return [fromplace_arr, toplace_arr, time_thismove]
 
 def move(direction, fromplace_arr, toplace_arr, max_n_eles, time, left_aftermove, trys, cumusteps):
+    # make an array with all move options (like, if left =['y','a','j','p'], the first move can be)
+    # ['y','a'], or ['y', 'j'], or ['a', 'j'], etc 
+    combinations_arr = get_combinations(fromplace_arr, max_n_eles)
+    for elements_ls in combinations_arr:
+        # remember the last step. We'll need to remeber that as everything running a different move option
+        # we'll need to go back to where we started 
+        fromplace_arr_laststep=fromplace_arr
+        toplace_arr_laststep = toplace_arr
+        direction_laststep = direction
+        time_laststep = time
+        cumusteps_last = cumusteps # this is for the historical moves from the first move up to this point
+        left_beforemove = left_aftermove
+        # print ('from ', fromplace_arr)
+        # print ('move', direction, elements_ls )
+        # print ('to', toplace_arr)
 
-        combinations_arr = get_combinations(fromplace_arr, max_n_eles)
-        for elements_ls in combinations_arr:
-            # remember the last step
-            fromplace_arr_laststep=fromplace_arr
-            toplace_arr_laststep = toplace_arr
-            direction_laststep = direction
-            time_laststep = time
-            cumusteps_last = cumusteps
-            # print ('from ', fromplace_arr)
-            # print ('move', direction, elements_ls )
-            # print ('to', toplace_arr)
+        # move one step, and get the changes 
+        # like after moving ['y', 'a'] from ['y','a','j','p'] to [], we'll have
+        # ['j', 'p'] on the from side, and  ['y', 'a'] on the to side, and it took 2 minutes to move ['y', 'a']
+        # 2 minutes is the max time needed between the time need for 'y', and for 'a'
+        move_results= move_once(elements_ls, fromplace_arr, toplace_arr)
+        # # update the results
+        fromplace_arr_aftermove = move_results[0]
+        toplace_arr_aftermove = move_results[1]        
+        time_thismove = move_results[2]          
+        time = time + time_thismove
+        # print('cumulative time used', time, 'minutes')
 
-            move_results= move_once(elements_ls, fromplace_arr, toplace_arr)
-            # # update the results
-            fromplace_arr_aftermove = move_results[0]
-            toplace_arr_aftermove = move_results[1]        
-            time_thismove = move_results[2]          
-            time = time + time_thismove
-            # print('cumulative time used', time, 'minutes')
-            thisstep={
-                "from":fromplace_arr, 
-                "direction":direction, 
-                "move":elements_ls, 
-                "to":toplace_arr, 
-                'time':time
-                }
-            # print(thisstep)
-            # swap to and from for the next move
-            toplace_arr = fromplace_arr_aftermove
-            fromplace_arr = toplace_arr_aftermove
+        # rememmber this step, and the cumulatative time used so far
+        thisstep={
+            "from":fromplace_arr, 
+            "direction":direction, 
+            "move":elements_ls, 
+            "to":toplace_arr, 
+            'time':time
+            }
+        # print(thisstep)
 
-            if (direction == 'forth'):                
-                direction = 'back'
-                max_n_eles=1
-                left_aftermove = fromplace_arr_aftermove
-            else:
-                direction = 'forth'
-                max_n_eles=2
-                left_aftermove = toplace_arr_aftermove
+        # swap to and from for the next move
+        # now we'll move someone to the opposite direction, so the previous from-place now becomes to-place,
+        # while the previous to-place now the from-place.
+        toplace_arr = fromplace_arr_aftermove
+        fromplace_arr = toplace_arr_aftermove
 
-            cumusteps = cumusteps + [thisstep]
+        # redefine the move direction, and the number of persons to move
+        # also, keep tracking the persons on the left side of the bridge
+        if (direction == 'forth'):                
+            direction = 'back'
+            max_n_eles = 1
+            left_aftermove = fromplace_arr_aftermove
+        else:
+            direction = 'forth'
+            max_n_eles=2
+            left_aftermove = toplace_arr_aftermove
+                        
+        # add the current step into the cumusteps
+        cumusteps = cumusteps + [thisstep]
 
-            if (len(left_aftermove) >0):
-                if (len(fromplace_arr)>0):                    
-                    trys = move(direction, fromplace_arr, toplace_arr, max_n_eles, time, left_aftermove, trys, cumusteps)   
-            else:
-                # print("done")
-                trys=trys + [cumusteps]
+        # as long as there is still at least one person on the left side, recursively run the move module
+        if (len(left_aftermove) >0):
+            if (len(fromplace_arr)>0):                    
+                trys = move(direction, fromplace_arr, toplace_arr, max_n_eles, time, left_aftermove, trys, cumusteps)   
+        else: # otherwise (if the left side is empty, a complete pattern or a try has been done)
+            # print("done")
+            # now that the cumusteps contains all moves of the current try from the very first step to the last (last being that all person on the left are moved across the bridge to the right now)
+            # push the cumusteps of this try to an array for recording all different tries. 
+            trys=trys + [cumusteps]
 
-            # use back the settings in the last step
-            fromplace_arr=fromplace_arr_laststep
-            toplace_arr= toplace_arr_laststep  
-            direction = direction_laststep  
-            time = time_laststep  
-            cumusteps=cumusteps_last
-        return trys
+        # before switching to a new choice other than in line 58, i.e., instead of moving
+        # ['y','a'] from ['y','a','j','p'], chose to move ['a', 'j'] from ['y','a','j','p'] instead
+        # to make this different try, we'll need to roll back to have persons on the left before moving
+        fromplace_arr=fromplace_arr_laststep
+        toplace_arr= toplace_arr_laststep  
+        direction = direction_laststep  
+        time = time_laststep  
+        cumusteps=cumusteps_last
+        left_aftermove = left_beforemove
+    return trys
 
 direction='forth'
 fromplace_arr = left
 toplace_arr = right
-left_aftermove=[]
+left_aftermove=left
 trys =[]
 cumusteps=[]
 trys=move(direction, fromplace_arr, toplace_arr, max_n_eles, time, left_aftermove, trys, cumusteps) 
